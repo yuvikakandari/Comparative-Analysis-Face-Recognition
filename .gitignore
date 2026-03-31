@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Model Weights
+*.h5
+*.pb
+.deepface/
+
+# Datasets and Private Images
+lfw-deepfunneled/
+dataset/
+faces/
+*.jpg
+*.png
+*.enc
+
+# Virtual Environments
+venv/
+.env
