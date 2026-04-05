@@ -28,13 +28,13 @@ def load_benchmark_data(model_name, stress=None):
         print(f"❌ Error: {lfw_path} folder not found!")
         return None
 
-    person_list = os.listdir(lfw_path)[:25]
+    person_list = os.listdir(lfw_path)
     for person in person_list:
         person_path = os.path.join(lfw_path, person)
         if not os.path.isdir(person_path): continue
         
         embeddings = []
-        for img_name in os.listdir(person_path)[:5]:
+        for img_name in os.listdir(person_path):
             img = cv2.imread(os.path.join(person_path, img_name))
             if img is None: continue
             
