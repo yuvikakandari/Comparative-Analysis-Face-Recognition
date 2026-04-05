@@ -20,32 +20,53 @@ def apply_stress(img, mode=None):
         return cv2.GaussianBlur(img, (15, 15), 0)
     return img
 
+import random
+
 def load_benchmark_data(model_name, stress=None):
     stress_label = stress if stress else "Baseline"
-    print(f"[INFO] Extracting {model_name} embeddings ({stress_label})...")
+    print(f"\n[INFO] Auditing {model_name} manifold stability ({stress_label})...")
     data = {}
+    
     if not os.path.exists(lfw_path):
         print(f"❌ Error: {lfw_path} folder not found!")
         return None
 
-    person_list = os.listdir(lfw_path)
+    # Get all identities from the folder
+    all_persons = [p for p in os.listdir(lfw_path) if os.path.isdir(os.path.join(lfw_path, p))]
+    
+    # REPRESENTATIVE SAMPLING: Select 300 random identities for statistical power
+    # We use a seed so results remain consistent for paper
+    random.seed(42) 
+    if len(all_persons) > 300:
+        person_list = random.sample(all_persons, 300)
+    else:
+        person_list = all_persons
+
+    print(f"[PROCESS] Processing {len(person_list)} identities...")
+
     for person in person_list:
         person_path = os.path.join(lfw_path, person)
-        if not os.path.isdir(person_path): continue
-        
         embeddings = []
-        for img_name in os.listdir(person_path):
-            img = cv2.imread(os.path.join(person_path, img_name))
+        
+        # Take up to 5 images per person to balance the dataset
+        img_files = os.listdir(person_path)[:5]
+        for img_name in img_files:
+            img_path = os.path.join(person_path, img_name)
+            img = cv2.imread(img_path)
             if img is None: continue
             
-            # Apply environmental stressors [cite: 113, 114]
+            # Apply environmental stressors (Luminance/Gaussian)
             img = apply_stress(img, mode=stress)
             
+            # Extract high-dimensional embedding
             emb = get_embedding(img, model_name)
-            if emb is not None: embeddings.append(emb)
+            if emb is not None: 
+                embeddings.append(emb)
 
+        # Only include identities with enough samples for genuine pair testing
         if len(embeddings) >= 2:
             data[person] = embeddings
+            
     return data
 
 def compute_research_metrics(genuine_distances, impostor_distances, model_name, stress=None):
